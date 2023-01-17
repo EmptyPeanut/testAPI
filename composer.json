@@ -1,0 +1,10 @@
+{
+    "name": "composertest/theo",
+    "autoload": {
+        "psr-4": {
+            "Composertest\\Theo\\": "src/",
+            "App\\": "app/"
+        }
+    },
+    "require": {}
+}
