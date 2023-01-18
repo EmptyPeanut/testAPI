@@ -3,7 +3,8 @@
     "autoload": {
         "psr-4": {
             "Composertest\\Theo\\": "src/",
-            "App\\": "app/"
+            "App\\": ["app/", "app/Controllers"],
+            "Utils\\": "Utils/"
         }
     },
     "require": {}

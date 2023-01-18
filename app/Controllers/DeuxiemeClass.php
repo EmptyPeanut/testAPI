@@ -1,6 +1,6 @@
 <?php
 namespace App;
-use App\PremiereClasse;
+use App\Users;
 
 class DeuxiemeClasse {
     private $premiereClasse;
