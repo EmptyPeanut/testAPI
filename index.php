@@ -1,15 +1,15 @@
 <?php
 // require_once './app/PremiereClass.php';
 require 'vendor/autoload.php';
-use App\Users;
+use App\Controllers\UsersController;
 
 
 $URI = $_SERVER['REQUEST_URI'];
 
 if (!empty($URI)) {
     switch ($URI) {
-        case '/user/findall':
-            $secondClasse = new Users();
+        case str_starts_with($URI, '/user'):
+            $secondClasse = new UsersController();
             break;
         
         default:

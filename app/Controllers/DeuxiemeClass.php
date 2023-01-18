@@ -1,5 +1,5 @@
 <?php
-namespace App;
+namespace App\Controllers;
 use App\Users;
 
 class DeuxiemeClasse {
