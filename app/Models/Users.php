@@ -10,6 +10,14 @@ class Users {
     }
 
     public function getAllUsers(){
-        $this->utils->pdo('SELECT * FROM authors', [], true);
+        $result_set = $this->utils->pdo('SELECT * FROM authors', [], true);
+        return $result_set;
+    }
+    public function addUser($username, $pwd){
+        $result_set = $this->utils->pdo(
+            'INSERT INTO authors (username, password) VALUES (?, ?)',
+            [$username, $pwd],
+            false
+        );
     }
 }
