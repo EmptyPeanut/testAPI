@@ -81,5 +81,28 @@ class UsersController {
             header('HTTP/1.1 405', true, 405);
         }  
     }
+
+    public function modifyUser(){
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        if ($_SERVER['REQUEST_METHOD'] == 'PATCH') {
+            if (!is_null($data) && !empty($data)) {
+
+                if (isset($data['username']) && !empty($data['username']) && isset($data['password']) && !empty($data['password'])) {
+                    if (gettype($data['username']) == "string" && gettype($data['password']) == "string") {
+                        $this->model->addUser($data['username'], $data['password']);
+                    } else {
+                        header('HTTP/1.1 400 Wrong type', true, 400);
+                    }
+                } else {
+                    header('HTTP/1.1 400 Username and password are not set', true, 400);
+                }
+            } else {
+                header('HTTP/1.1 400 Sometihng went wrong trying to get the request body', true, 400);
+            }
+        } else {
+            header('HTTP/1.1 405', true, 405);
+        } 
+    }
 }
 ?>
