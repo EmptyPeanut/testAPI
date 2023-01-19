@@ -9,8 +9,8 @@ $URI = $_SERVER['REQUEST_URI'];
 if (!empty($URI)) {
     switch ($URI) {
         case str_starts_with($URI, '/user/'):
-            $users = new UsersController();
-            $users->dispatcher($URI);
+            $users = new UsersController($URI);
+            $users->dispatcher();
             break;
         
         default:
