@@ -75,7 +75,7 @@ class UsersController {
             }
             
         }else {
-            header('HTTP/1.1 400 Sometihng went wrong when trying to get the request body', true, 400);
+            header('HTTP/1.1 400 Sometihng went wrong trying to get the request body', true, 400);
         }
     }
 
