@@ -10,17 +10,17 @@ class Users {
     }
 
     public function getAllUsers(){
-        $result_set = $this->utils->pdo('SELECT * FROM authors', [], true);
+        $result_set = $this->utils->pdo('SELECT * FROM players', [], true);
         return $result_set;
     }
     public function getUser(int $id)
     {
-        $result_set = $this->utils->pdo('SELECT * FROM authors WHERE id = ?', [$id], true);
+        $result_set = $this->utils->pdo('SELECT * FROM players WHERE id = ?', [$id], true);
         return $result_set;
     }
     public function addUser($username, $pwd){
         $this->utils->pdo(
-            'INSERT INTO authors (username, password) VALUES (?, ?)',
+            'INSERT INTO players (username, password) VALUES (?, ?)',
             [$username, $pwd],
             false
         );
@@ -29,7 +29,7 @@ class Users {
     public function modifyUser(int $id){
         //TODO: à refaire, dépend de comment est fait l'envoi dans le front
         $this->utils->pdo(
-            "UPDATE authors SET nom_colonne_1 = 'nouvelle valeur' WHERE id = ?",
+            "UPDATE players SET nom_colonne_1 = 'nouvelle valeur' WHERE id = ?",
             [$id],
             false
         );
