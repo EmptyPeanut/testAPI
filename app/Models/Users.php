@@ -80,13 +80,20 @@ class Users {
      */
     public function connectUser(string $username, string $pwd){
         if ($this->userExists($username)) {
-            $password = $this->utils->pdo(
-                'SELECT password FROM players WHERE username = ?',
+            $result_set = $this->utils->pdo(
+                'SELECT * FROM players WHERE username = ?',
                 [$username],
                 true
-            )['password'];
+            )[0];
+            // return var_dump($result_set);
+            if (isset($result_set["password"]) && password_verify($pwd, $result_set["password"])) {
+                return $result_set;
+            }else {
+                return false;
+            }
             //Voir comment on ouvre une 'session' sur React Native
-            var_dump('Hello');
+        }else {
+            return false;
         }
     }
 }

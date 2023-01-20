@@ -39,7 +39,7 @@ class UsersController {
         case 'update':
             $this->modifyUser();
             break;
-        case 'exists':
+        case 'connect':
             $this->connection();
             break;
         default:
@@ -70,7 +70,7 @@ class UsersController {
                         "id"            => $set["id"],
                         "username"      => $set["username"],
                         "firstName"     => $set["first_name"],
-                        "lasName"       => $set["last_name"],
+                        "lastName"       => $set["last_name"],
                         "age"           => $set["age"]
                     ]
                 );
@@ -107,13 +107,14 @@ class UsersController {
                         && gettype($data['firstName'])  == "string"
                         && gettype($data['lastName'])   == "string"
                         ) {
-
+                        
+                        $hashedPwd = password_hash($data["password"], PASSWORD_DEFAULT);
                         try {
 
                             $this->helper->returnJson([
                                 "code" => "200"
                             ]);
-                            $this->model->addUser($data['firstName'], $data['lastName'], $data['username'], $data['password'], $data['age']);
+                            $this->model->addUser($data['firstName'], $data['lastName'], $data['username'], $hashedPwd, $data['age']);
 
                         } catch (\Throwable $th) {
 
@@ -159,9 +160,8 @@ class UsersController {
 
     //TODO: Fonction incmplète ici et dans le model, ne sait pas encore comment la modification se fera
     public function modifyUser(){
-        $data = json_decode(file_get_contents('php://input'), true);
-
         if ($_SERVER['REQUEST_METHOD'] == 'PATCH') {
+            $data = json_decode(file_get_contents('php://input'), true);
             if (count($this->explodedURI)== 2 && isset($this->explodedURI[1]) && !is_null($this->explodedURI[1]) && !empty($this->explodedURI[1])) {
                 $userId = (int)$this->explodedURI[1];
                 if (!empty($userId)) {
@@ -237,8 +237,58 @@ class UsersController {
     }
 
     public function connection(){
-        var_dump($this->explodedURI[1]);
-        var_dump($this->model->userExists($this->explodedURI[1]));
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+
+            $data = json_decode(file_get_contents('php://input'), true);
+
+            if (count($data) == 2 
+                && isset($data["username"]) && !is_null($data["username"]) && !empty($data["username"])
+                && isset($data["password"]) && !is_null($data["password"]) && !empty($data["password"])
+            ) {
+
+                $userInfos = $this->model->connectUser($data["username"], $data["password"]);
+
+                if ($userInfos) {
+
+                    //C'est ici que la connexion est réussie
+                    $this->helper->returnJson([
+                        "data"  => array(
+                            "id"            => $userInfos["id"],
+                            "username"      => $userInfos["username"],
+                            "firstName"     => $userInfos["first_name"],
+                            "lastName"      => $userInfos["last_name"],
+                            "age"           => $userInfos["age"]
+                        ),
+                        "code"  => 200
+                    ]);
+
+                }else {
+
+                    $this->helper->returnJson([
+                        "message" => "This username does not exist or Wrong combination of username/password"
+                    ]);
+                    header('HTTP/1.1 400', true, 400);
+
+                }
+            }else {
+
+                $this->helper->returnJson([
+                    "code"      => 401,
+                    "message"   => "Missing fields"
+                ]);
+                header('HTTP/1.1 400', true, 400);
+
+            }
+        }else {
+
+            $this->helper->returnJson([
+                "message" => "Wrong method, please use 'POST' method instead"
+            ]);
+            header('HTTP/1.1 405', true, 405);
+
+        }
+
     }
 }
 ?>
