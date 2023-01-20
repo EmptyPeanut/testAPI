@@ -78,7 +78,7 @@ class Users {
      * @param string $username
      * @param string $pwd
      */
-    public function connectUser(string $username, string $pwd){
+    public function connectUser(string $username, string $pwd, bool $data = false){
         if ($this->userExists($username)) {
             $result_set = $this->utils->pdo(
                 'SELECT * FROM players WHERE username = ?',
@@ -87,7 +87,12 @@ class Users {
             )[0];
             // return var_dump($result_set);
             if (isset($result_set["password"]) && password_verify($pwd, $result_set["password"])) {
-                return $result_set;
+                if ($data === true) {
+                    return $result_set;
+                }else {
+                    return true;
+                }
+                
             }else {
                 return false;
             }

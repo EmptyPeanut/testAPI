@@ -247,22 +247,23 @@ class UsersController {
                 && isset($data["password"]) && !is_null($data["password"]) && !empty($data["password"])
             ) {
 
-                $userInfos = $this->model->connectUser($data["username"], $data["password"]);
+                $userInfos = $this->model->connectUser($data["username"], $data["password"], true);
 
                 if ($userInfos) {
 
                     //C'est ici que la connexion est réussie
-                    $this->helper->returnJson([
-                        "data"  => array(
-                            "id"            => $userInfos["id"],
-                            "username"      => $userInfos["username"],
-                            "firstName"     => $userInfos["first_name"],
-                            "lastName"      => $userInfos["last_name"],
-                            "age"           => $userInfos["age"]
-                        ),
-                        "code"  => 200
-                    ]);
-
+                    if ($userInfos !== true) {
+                        $this->helper->returnJson([
+                            "data"  => array(
+                                "id"            => $userInfos["id"],
+                                "username"      => $userInfos["username"],
+                                "firstName"     => $userInfos["first_name"],
+                                "lastName"      => $userInfos["last_name"],
+                                "age"           => $userInfos["age"]
+                            ),
+                            "code"  => 200
+                        ]);
+                    }
                 }else {
 
                     $this->helper->returnJson([
