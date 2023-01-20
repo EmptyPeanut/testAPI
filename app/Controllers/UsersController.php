@@ -39,17 +39,18 @@ class UsersController {
         case 'update':
             $this->modifyUser();
             break;
-        
+        case 'exists':
+            $this->connection();
+            break;
         default:
             $this->getAllUsers();
             break;
         }
     }
+
     
-    
-    
-    
-    
+
+
     /**
      * Get data from all every users in the database
      * @return JSON of every users
@@ -109,10 +110,10 @@ class UsersController {
 
                         try {
 
-                            echo(json_encode([
+                            $this->helper->returnJson([
                                 "code" => "200"
-                            ]));
-                            $this->model->addUser($data['username'], $data['password']);
+                            ]);
+                            $this->model->addUser($data['firstName'], $data['lastName'], $data['username'], $data['password'], $data['age']);
 
                         } catch (\Throwable $th) {
 
@@ -124,32 +125,31 @@ class UsersController {
                         
                     } else {
                         
-                        echo(json_encode(
-                            [   
-                                "code"      => 400,
-                                "message"   => "Input of wrong type"
-                            ]
-                        ));
+                        $this->helper->returnJson([
+                            "code"      => 400,
+                            "message"   => "Input of wrong type"
+                        ]);
+
                         header('HTTP/1.1 400 Wrong type', true, 400);
 
                     }
                 } else {
-                    echo(json_encode(
-                        [   
-                            "code"      => 400,
-                            "message"   => "There are missing fields"
-                        ]
-                    ));
+
+                    $this->helper->returnJson([
+                        "code"      => 400,
+                        "message"   => "There are missing fields"
+                    ]);
+
                     header('HTTP/1.1 400 Username and password are not set', true, 400);
 
                 }
             } else {
-                echo(json_encode(
-                    [   
-                        "code"      => 400,
-                        "message"   => "Something went wrong trying to get the request body"
-                    ]
-                ));
+
+                $this->helper->returnJson([   
+                    "code"      => 400,
+                    "message"   => "Something went wrong trying to get the request body"
+                ]);
+
                 header('HTTP/1.1 400', true, 400);
             }
         }else {
@@ -177,6 +177,9 @@ class UsersController {
         } 
     }
 
+    /**
+     * Get data of a specific user by his Id 
+     */
     public function findOne(){
         $result = [];
 
@@ -231,6 +234,11 @@ class UsersController {
             header('HTTP/1.1 405', true, 405);
         }
         $this->helper->returnJson($result);
+    }
+
+    public function connection(){
+        var_dump($this->explodedURI[1]);
+        var_dump($this->model->userExists($this->explodedURI[1]));
     }
 }
 ?>
