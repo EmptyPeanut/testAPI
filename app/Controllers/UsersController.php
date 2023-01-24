@@ -1,9 +1,12 @@
 <?php
+declare(strict_types=1);
 namespace App\Controllers;
 
 
 use App\Helper;
 use App\Models\Users;
+use \DateTimeImmutable;
+use Firebase\JWT\JWT;
 
 
 class UsersController {
@@ -50,12 +53,14 @@ class UsersController {
 
     
 
-
+    //TODO: Ajouter une autorisation Bearer spécifique pour les tâches "Admin", ou le spécifier dans le body du JWT
+    //Ajouter la fonction qui check si admin ou pas dans le helper
     /**
-     * Get data from all every users in the database
+     * Get data of every users in the database
      * @return JSON of every users
      */
-    public function getAllUsers(){
+    public function getAllUsers()
+    {
 
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
@@ -70,7 +75,7 @@ class UsersController {
                         "id"            => $set["id"],
                         "username"      => $set["username"],
                         "firstName"     => $set["first_name"],
-                        "lastName"       => $set["last_name"],
+                        "lastName"      => $set["last_name"],
                         "age"           => $set["age"]
                     ]
                 );
@@ -88,8 +93,10 @@ class UsersController {
     
     /**
      * Create a user from the data passed in the body request
+     * @return Bearer
      */
-    public function addUser(){
+    public function addUser(): void
+    {
         $data = json_decode(file_get_contents('php://input'), true);
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -159,7 +166,8 @@ class UsersController {
     }
 
     //TODO: Fonction incmplète ici et dans le model, ne sait pas encore comment la modification se fera
-    public function modifyUser(){
+    public function modifyUser()
+    {
         if ($_SERVER['REQUEST_METHOD'] == 'PATCH') {
             $data = json_decode(file_get_contents('php://input'), true);
             if (count($this->explodedURI)== 2 && isset($this->explodedURI[1]) && !is_null($this->explodedURI[1]) && !empty($this->explodedURI[1])) {
@@ -178,9 +186,12 @@ class UsersController {
     }
 
     /**
-     * Get data of a specific user by his Id 
+     * Get data of a specific user by his Id
+     * @Route findOne/{int id}
+     * @return JSON Response body
      */
-    public function findOne(){
+    public function findOne()
+    {
         $result = [];
 
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
@@ -236,6 +247,10 @@ class UsersController {
         $this->helper->returnJson($result);
     }
 
+    /**
+     * Check the username/password combination, if they match, returns the bearer authorization
+     * @return Bearer
+     */
     public function connection(){
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -253,6 +268,21 @@ class UsersController {
 
                     //C'est ici que la connexion est réussie
                     if ($userInfos !== true) {
+                        $secretKey  = $_ENV['KEY'];
+                        $issuedAt   = new DateTimeImmutable();
+                        $expire     = $issuedAt->modify('+7 days')->getTimestamp();
+                        $serverName = "projectnumber2";
+                        $username   = $userInfos["username"];
+
+                        $data = [
+                            'iat'  => $issuedAt->getTimestamp(),         // Issued at:  : heure à laquelle le jeton a été généré
+                            'iss'  => $serverName,                       // Émetteur
+                            'nbf'  => $issuedAt->getTimestamp(),         // Pas avant..
+                            'exp'  => $expire,                           // Expiration
+                            'userName' => $username,                     // Nom d'utilisateur
+                        ];
+                        JWT::encode($data, $secretKey,'HS512');          //Authorisation Bearer
+
                         $this->helper->returnJson([
                             "data"  => array(
                                 "id"            => $userInfos["id"],
@@ -264,6 +294,7 @@ class UsersController {
                             "code"  => 200
                         ]);
                     }
+                    
                 }else {
 
                     $this->helper->returnJson([
