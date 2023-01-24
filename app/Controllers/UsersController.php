@@ -266,22 +266,31 @@ class UsersController {
 
                 if ($userInfos) {
 
+                    $secretKey  = $_ENV['KEY'];
+                    $issuedAt   = new DateTimeImmutable();
+                    $expire     = $issuedAt->modify('+7 days')->getTimestamp();
+                    $serverName = "projectnumber2";
+                    $username   = $userInfos["username"];
+
+                    $data = [
+                        'iat'  => $issuedAt->getTimestamp(),         // Issued at:  : heure à laquelle le jeton a été généré
+                        'iss'  => $serverName,                       // Émetteur
+                        'nbf'  => $issuedAt->getTimestamp(),         // Pas avant..
+                        'exp'  => $expire,                           // Expiration
+                        'userName' => $username,                     // Nom d'utilisateur
+                    ];
+
+                    $authorization = "Authorization: Bearer " . JWT::encode($data, $secretKey,'HS512');
+                    $response = curl_init();
+                    curl_setopt($response, CURLOPT_HTTPHEADER, array($authorization));
+                    curl_setopt($response, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($response, CURLOPT_FOLLOWLOCATION, 1);
+                    curl_exec($response);
+
+                    
                     //C'est ici que la connexion est réussie
                     if ($userInfos !== true) {
-                        $secretKey  = $_ENV['KEY'];
-                        $issuedAt   = new DateTimeImmutable();
-                        $expire     = $issuedAt->modify('+7 days')->getTimestamp();
-                        $serverName = "projectnumber2";
-                        $username   = $userInfos["username"];
-
-                        $data = [
-                            'iat'  => $issuedAt->getTimestamp(),         // Issued at:  : heure à laquelle le jeton a été généré
-                            'iss'  => $serverName,                       // Émetteur
-                            'nbf'  => $issuedAt->getTimestamp(),         // Pas avant..
-                            'exp'  => $expire,                           // Expiration
-                            'userName' => $username,                     // Nom d'utilisateur
-                        ];
-                        JWT::encode($data, $secretKey,'HS512');          //Authorisation Bearer
+                                  //Authorisation Bearer
 
                         $this->helper->returnJson([
                             "data"  => array(
