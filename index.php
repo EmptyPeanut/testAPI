@@ -1,8 +1,13 @@
 <?php
 // require_once './app/PremiereClass.php';
+declare(strict_types=1);
+
 require 'vendor/autoload.php';
+
 use App\Controllers\UsersController;
 
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
 
 $URI = $_SERVER['REQUEST_URI'];
 
