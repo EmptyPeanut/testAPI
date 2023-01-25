@@ -23,6 +23,7 @@ class Helper{
             } catch (\Throwable $th) {
                 return static::returnJson([
                     "message" => "No token found or wrong token"
+                    //Test
                 ]);
                 die();
             }
