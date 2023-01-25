@@ -12,13 +12,11 @@ use Firebase\JWT\JWT;
 class UsersController {
     
     private $model;
-    private $helper;
     private $URI;
     private $explodedURI;
 
     function __construct(string $URI){
         $this->model = new Users();
-        $this->helper = new Helper();
         $this->URI = $URI;
         $this->explodedURI = explode('/', substr($this->URI, 6));
     }
@@ -63,28 +61,30 @@ class UsersController {
     {
 
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+            if (Helper::checkAuthorization()) {
+                $result_set     = $this->model->getAllUsers();
+                $result         = [];
+                $result['data'] = [];
 
-            $result_set     = $this->model->getAllUsers();
-            $result         = [];
-            $result['data'] = [];
+                foreach ($result_set as $set) {
+                    array_push(
+                        $result['data'],
+                        [
+                            "id"            => $set["id"],
+                            "username"      => $set["username"],
+                            "firstName"     => $set["first_name"],
+                            "lastName"      => $set["last_name"],
+                            "age"           => $set["age"]
+                        ]
+                    );
+                }
 
-            foreach ($result_set as $set) {
-                array_push(
-                    $result['data'],
-                    [
-                        "id"            => $set["id"],
-                        "username"      => $set["username"],
-                        "firstName"     => $set["first_name"],
-                        "lastName"      => $set["last_name"],
-                        "age"           => $set["age"]
-                    ]
-                );
+                if (!is_null($result)) {
+                    $result['code'] = 200;
+                    Helper::returnJson($result);
+                }
             }
-
-            if (!is_null($result)) {
-                $result['code'] = 200;
-                $this->helper->returnJson($result);
-            }
+            
 
         }else {
             header('HTTP/1.1 405', true, 405);
@@ -118,7 +118,7 @@ class UsersController {
                         $hashedPwd = password_hash($data["password"], PASSWORD_DEFAULT);
                         try {
 
-                            $this->helper->returnJson([
+                            Helper::returnJson([
                                 "code" => "200"
                             ]);
                             $this->model->addUser($data['firstName'], $data['lastName'], $data['username'], $hashedPwd, $data['age']);
@@ -133,7 +133,7 @@ class UsersController {
                         
                     } else {
                         
-                        $this->helper->returnJson([
+                        Helper::returnJson([
                             "code"      => 400,
                             "message"   => "Input of wrong type"
                         ]);
@@ -143,7 +143,7 @@ class UsersController {
                     }
                 } else {
 
-                    $this->helper->returnJson([
+                    Helper::returnJson([
                         "code"      => 400,
                         "message"   => "There are missing fields"
                     ]);
@@ -153,7 +153,7 @@ class UsersController {
                 }
             } else {
 
-                $this->helper->returnJson([   
+                Helper::returnJson([   
                     "code"      => 400,
                     "message"   => "Something went wrong trying to get the request body"
                 ]);
@@ -244,7 +244,7 @@ class UsersController {
             ];
             header('HTTP/1.1 405', true, 405);
         }
-        $this->helper->returnJson($result);
+        Helper::returnJson($result);
     }
 
     /**
@@ -280,33 +280,20 @@ class UsersController {
                         'userName' => $username,                     // Nom d'utilisateur
                     ];
 
-                    $authorization = "Authorization: Bearer " . JWT::encode($data, $secretKey,'HS512');
-                    $response = curl_init();
-                    curl_setopt($response, CURLOPT_HTTPHEADER, array($authorization));
-                    curl_setopt($response, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($response, CURLOPT_FOLLOWLOCATION, 1);
-                    curl_exec($response);
+                    $token = JWT::encode($data, $secretKey,'HS512');
 
-                    
                     //C'est ici que la connexion est réussie
                     if ($userInfos !== true) {
-                                  //Authorisation Bearer
 
-                        $this->helper->returnJson([
-                            "data"  => array(
-                                "id"            => $userInfos["id"],
-                                "username"      => $userInfos["username"],
-                                "firstName"     => $userInfos["first_name"],
-                                "lastName"      => $userInfos["last_name"],
-                                "age"           => $userInfos["age"]
-                            ),
-                            "code"  => 200
+                        Helper::returnJson([
+                            "code"  => 200,
+                            "token"  => $token
                         ]);
                     }
                     
                 }else {
 
-                    $this->helper->returnJson([
+                    Helper::returnJson([
                         "message" => "This username does not exist or Wrong combination of username/password"
                     ]);
                     header('HTTP/1.1 400', true, 400);
@@ -314,7 +301,7 @@ class UsersController {
                 }
             }else {
 
-                $this->helper->returnJson([
+                Helper::returnJson([
                     "code"      => 401,
                     "message"   => "Missing fields"
                 ]);
@@ -323,7 +310,7 @@ class UsersController {
             }
         }else {
 
-            $this->helper->returnJson([
+            Helper::returnJson([
                 "message" => "Wrong method, please use 'POST' method instead"
             ]);
             header('HTTP/1.1 405', true, 405);
