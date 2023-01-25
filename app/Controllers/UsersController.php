@@ -1,21 +1,22 @@
 <?php
+declare(strict_types=1);
 namespace App\Controllers;
 
 
 use App\Helper;
 use App\Models\Users;
+use \DateTimeImmutable;
+use Firebase\JWT\JWT;
 
 
 class UsersController {
     
     private $model;
-    private $helper;
     private $URI;
     private $explodedURI;
 
     function __construct(string $URI){
         $this->model = new Users();
-        $this->helper = new Helper();
         $this->URI = $URI;
         $this->explodedURI = explode('/', substr($this->URI, 6));
     }
@@ -50,36 +51,40 @@ class UsersController {
 
     
 
-
+    //TODO: Ajouter une autorisation Bearer spécifique pour les tâches "Admin", ou le spécifier dans le body du JWT
+    //Ajouter la fonction qui check si admin ou pas dans le helper
     /**
-     * Get data from all every users in the database
+     * Get data of every users in the database
      * @return JSON of every users
      */
-    public function getAllUsers(){
+    public function getAllUsers()
+    {
 
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+            if (Helper::checkAuthorization()) {
+                $result_set     = $this->model->getAllUsers();
+                $result         = [];
+                $result['data'] = [];
 
-            $result_set     = $this->model->getAllUsers();
-            $result         = [];
-            $result['data'] = [];
+                foreach ($result_set as $set) {
+                    array_push(
+                        $result['data'],
+                        [
+                            "id"            => $set["id"],
+                            "username"      => $set["username"],
+                            "firstName"     => $set["first_name"],
+                            "lastName"      => $set["last_name"],
+                            "age"           => $set["age"]
+                        ]
+                    );
+                }
 
-            foreach ($result_set as $set) {
-                array_push(
-                    $result['data'],
-                    [
-                        "id"            => $set["id"],
-                        "username"      => $set["username"],
-                        "firstName"     => $set["first_name"],
-                        "lastName"       => $set["last_name"],
-                        "age"           => $set["age"]
-                    ]
-                );
+                if (!is_null($result)) {
+                    $result['code'] = 200;
+                    Helper::returnJson($result);
+                }
             }
-
-            if (!is_null($result)) {
-                $result['code'] = 200;
-                $this->helper->returnJson($result);
-            }
+            
 
         }else {
             header('HTTP/1.1 405', true, 405);
@@ -88,8 +93,10 @@ class UsersController {
     
     /**
      * Create a user from the data passed in the body request
+     * @return Bearer
      */
-    public function addUser(){
+    public function addUser(): void
+    {
         $data = json_decode(file_get_contents('php://input'), true);
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -111,7 +118,7 @@ class UsersController {
                         $hashedPwd = password_hash($data["password"], PASSWORD_DEFAULT);
                         try {
 
-                            $this->helper->returnJson([
+                            Helper::returnJson([
                                 "code" => "200"
                             ]);
                             $this->model->addUser($data['firstName'], $data['lastName'], $data['username'], $hashedPwd, $data['age']);
@@ -126,7 +133,7 @@ class UsersController {
                         
                     } else {
                         
-                        $this->helper->returnJson([
+                        Helper::returnJson([
                             "code"      => 400,
                             "message"   => "Input of wrong type"
                         ]);
@@ -136,7 +143,7 @@ class UsersController {
                     }
                 } else {
 
-                    $this->helper->returnJson([
+                    Helper::returnJson([
                         "code"      => 400,
                         "message"   => "There are missing fields"
                     ]);
@@ -146,7 +153,7 @@ class UsersController {
                 }
             } else {
 
-                $this->helper->returnJson([   
+                Helper::returnJson([   
                     "code"      => 400,
                     "message"   => "Something went wrong trying to get the request body"
                 ]);
@@ -159,7 +166,8 @@ class UsersController {
     }
 
     //TODO: Fonction incmplète ici et dans le model, ne sait pas encore comment la modification se fera
-    public function modifyUser(){
+    public function modifyUser()
+    {
         if ($_SERVER['REQUEST_METHOD'] == 'PATCH') {
             $data = json_decode(file_get_contents('php://input'), true);
             if (count($this->explodedURI)== 2 && isset($this->explodedURI[1]) && !is_null($this->explodedURI[1]) && !empty($this->explodedURI[1])) {
@@ -178,9 +186,12 @@ class UsersController {
     }
 
     /**
-     * Get data of a specific user by his Id 
+     * Get data of a specific user by his Id
+     * @Route findOne/{int id}
+     * @return JSON Response body
      */
-    public function findOne(){
+    public function findOne()
+    {
         $result = [];
 
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
@@ -233,9 +244,13 @@ class UsersController {
             ];
             header('HTTP/1.1 405', true, 405);
         }
-        $this->helper->returnJson($result);
+        Helper::returnJson($result);
     }
 
+    /**
+     * Check the username/password combination, if they match, returns the bearer authorization
+     * @return Bearer
+     */
     public function connection(){
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -251,22 +266,34 @@ class UsersController {
 
                 if ($userInfos) {
 
+                    $secretKey  = $_ENV['KEY'];
+                    $issuedAt   = new DateTimeImmutable();
+                    $expire     = $issuedAt->modify('+7 days')->getTimestamp();
+                    $serverName = "projectnumber2";
+                    $username   = $userInfos["username"];
+
+                    $data = [
+                        'iat'  => $issuedAt->getTimestamp(),         // Issued at:  : heure à laquelle le jeton a été généré
+                        'iss'  => $serverName,                       // Émetteur
+                        'nbf'  => $issuedAt->getTimestamp(),         // Pas avant..
+                        'exp'  => $expire,                           // Expiration
+                        'userName' => $username,                     // Nom d'utilisateur
+                    ];
+
+                    $token = JWT::encode($data, $secretKey,'HS512');
+
                     //C'est ici que la connexion est réussie
                     if ($userInfos !== true) {
-                        $this->helper->returnJson([
-                            "data"  => array(
-                                "id"            => $userInfos["id"],
-                                "username"      => $userInfos["username"],
-                                "firstName"     => $userInfos["first_name"],
-                                "lastName"      => $userInfos["last_name"],
-                                "age"           => $userInfos["age"]
-                            ),
-                            "code"  => 200
+
+                        Helper::returnJson([
+                            "code"  => 200,
+                            "token"  => $token
                         ]);
                     }
+                    
                 }else {
 
-                    $this->helper->returnJson([
+                    Helper::returnJson([
                         "message" => "This username does not exist or Wrong combination of username/password"
                     ]);
                     header('HTTP/1.1 400', true, 400);
@@ -274,7 +301,7 @@ class UsersController {
                 }
             }else {
 
-                $this->helper->returnJson([
+                Helper::returnJson([
                     "code"      => 401,
                     "message"   => "Missing fields"
                 ]);
@@ -283,7 +310,7 @@ class UsersController {
             }
         }else {
 
-            $this->helper->returnJson([
+            Helper::returnJson([
                 "message" => "Wrong method, please use 'POST' method instead"
             ]);
             header('HTTP/1.1 405', true, 405);

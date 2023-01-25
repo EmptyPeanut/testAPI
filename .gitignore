@@ -1,4 +1,4 @@
 /vendor/
 /.htaccess
 /.DS_Store
-/Utils
+/.env

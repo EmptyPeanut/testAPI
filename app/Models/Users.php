@@ -73,10 +73,13 @@ class Users {
         }
     }
 
+    //TODO: Avec JWT, renvoyer un bearer lorsque la conexion s'est bien faite. Dans l'autorisation se trouvera le pseudo ou l'id de l'utilisateur
+    //qu'on pourra utiliser pour chaque action qu'il fera
     /**
-     * Check if the user exists, then verify if it's the good password
-     * @param string $username
-     * @param string $pwd
+     * Check if the user exists, then verify if it's the right password
+     * @param string    $username
+     * @param string    $pwd
+     * @param bool|null $data
      */
     public function connectUser(string $username, string $pwd, bool $data = false){
         if ($this->userExists($username)) {
@@ -85,18 +88,15 @@ class Users {
                 [$username],
                 true
             )[0];
-            // return var_dump($result_set);
             if (isset($result_set["password"]) && password_verify($pwd, $result_set["password"])) {
                 if ($data === true) {
                     return $result_set;
                 }else {
                     return true;
-                }
-                
+                } 
             }else {
                 return false;
             }
-            //Voir comment on ouvre une 'session' sur React Native
         }else {
             return false;
         }
