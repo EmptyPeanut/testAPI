@@ -8,7 +8,8 @@ use App\Models\Users;
 use \DateTimeImmutable;
 use Firebase\JWT\JWT;
 
-
+//TODO: Pour le code Bearer, faire en sorte que lorsque l'utilisateur coche la case "se souvenir de moi",
+// qu'il soit dans la bdd et que l'on fasse le check avec celui-ci (sans limite de temps) 
 class UsersController {
     
     private $model;
@@ -265,29 +266,13 @@ class UsersController {
                 $userInfos = $this->model->connectUser($data["username"], $data["password"], true);
 
                 if ($userInfos) {
-
-                    $secretKey  = $_ENV['KEY'];
-                    $issuedAt   = new DateTimeImmutable();
-                    $expire     = $issuedAt->modify('+7 days')->getTimestamp();
-                    $serverName = "projectnumber2";
-                    $username   = $userInfos["username"];
-
-                    $data = [
-                        'iat'  => $issuedAt->getTimestamp(),         // Issued at:  : heure à laquelle le jeton a été généré
-                        'iss'  => $serverName,                       // Émetteur
-                        'nbf'  => $issuedAt->getTimestamp(),         // Pas avant..
-                        'exp'  => $expire,                           // Expiration
-                        'userName' => $username,                     // Nom d'utilisateur
-                    ];
-
-                    $token = JWT::encode($data, $secretKey,'HS512');
-
+                    
                     //C'est ici que la connexion est réussie
-                    if ($userInfos !== true) {
-
+                    if ($userInfos !== true && $userInfos !== false) {
+                        $token = Helper::createAuthorization($userInfos);
+                        header('Authorzation: Bearer ' . $token);
                         Helper::returnJson([
                             "code"  => 200,
-                            "token"  => $token
                         ]);
                     }
                     
