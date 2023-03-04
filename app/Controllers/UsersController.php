@@ -4,7 +4,8 @@ namespace App\Controllers;
 
 
 use App\Helper;
-use App\Models\Users;
+use App\Models\UsersService;
+use App\Entities\Users;
 use \DateTimeImmutable;
 use Firebase\JWT\JWT;
 
@@ -14,9 +15,9 @@ class UsersController {
     private $model;
     private $explodedURI;
 
-    function __construct(array $explodedUri){
+    public function __construct(array $explodedUri){
         $this->explodedURI = $explodedUri;
-        $this->model = new Users();
+        $this->model = new UsersService();
     }
 
     //TODO: Ajouter une autorisation Bearer spécifique pour les tâches "Admin", ou le spécifier dans le body du JWT
@@ -30,22 +31,25 @@ class UsersController {
 
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             if (Helper::checkAuthorization()) {
-                $result_set     = $this->model->getAllUsers();
+                $users     = $this->model->getAllUsers();
                 $result         = [];
-                $result['data'] = [];
+                $result['data'] = $users;
 
-                foreach ($result_set as $set) {
-                    array_push(
-                        $result['data'],
-                        [
-                            "id"            => $set["id"],
-                            "username"      => $set["username"],
-                            "firstName"     => $set["first_name"],
-                            "lastName"      => $set["last_name"],
-                            "age"           => $set["age"]
-                        ]
-                    );
-                }
+                // foreach ($users as $user) {
+
+                    
+
+                    // array_push(
+                    //     $result['data'],
+                    //     [
+                    //         "id"            => $set["id"],
+                    //         "username"      => $set["username"],
+                    //         "firstName"     => $set["first_name"],
+                    //         "lastName"      => $set["last_name"],
+                    //         "age"           => $set["age"]
+                    //     ]
+                    // );
+                // }
 
                 if (!is_null($result)) {
                     $result['code'] = 200;
@@ -233,29 +237,13 @@ class UsersController {
 
                 if ($userInfos) {
 
-                    $secretKey  = $_ENV['KEY'];
-                    $issuedAt   = new DateTimeImmutable();
-                    $expire     = $issuedAt->modify('+7 days')->getTimestamp();
-                    $serverName = "projectnumber2";
-                    $username   = $userInfos["username"];
-
-                    $data = [
-                        'iat'  => $issuedAt->getTimestamp(),         // Issued at:  : heure à laquelle le jeton a été généré
-                        'iss'  => $serverName,                       // Émetteur
-                        'nbf'  => $issuedAt->getTimestamp(),         // Pas avant..
-                        'exp'  => $expire,                           // Expiration
-                        'userName' => $username,                     // Nom d'utilisateur
-                    ];
-
-                    $token = JWT::encode($data, $secretKey,'HS512');
+                    $token = Helper::createAuthorization($userInfos['username']);
 
                     //C'est ici que la connexion est réussie
-                    if ($userInfos !== true) {
-
-                        Helper::returnJson([
-                            "code"  => 200,
-                            "token"  => $token
-                        ]);
+                    if ($userInfos !== true && !empty($token)) {
+                        header('Authorization: Bearer ' . $token);
+                        return Helper::returnJson(["code"  => 200]);
+                        
                     }
                     
                 }else {

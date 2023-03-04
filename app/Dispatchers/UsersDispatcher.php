@@ -1,4 +1,5 @@
-<?
+<?php
+declare(strict_types=1);
 
 namespace App\Dispatchers;
 
@@ -6,18 +7,17 @@ use App\Controllers\UsersController;
 
 class UsersDispatcher{
 
-    private $explodedURI;
+    // private $explodedURI;
     private $usersController;
     
-    public function __construct(string $URI)
+    public function __construct(array $explodedURI)
     {
-        $this->explodedURI = explode('/', substr($URI, 6));
-        $this->usersController = new UsersController($URI);
-        $this->dispatch($this->explodedURI);
+        $this->usersController = new UsersController($explodedURI);
+        $this->dispatch($explodedURI);
     }
-    
+
     public function dispatch(array $explodedURI){
-        return match ($explodedURI[0]) {
+        return match ($explodedURI[2]) {
             'findAll'   => $this->usersController->getAllUsers(),
             'add'       => $this->usersController->addUser(),
             'findOne'   => $this->usersController->findOne(),

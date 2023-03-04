@@ -59,4 +59,24 @@ class Helper{
         }
 
     }
+
+
+    public static function createAuthorization($username){
+        
+        $secretKey  = $_ENV['KEY'];
+        $issuedAt   = new DateTimeImmutable();
+        $expire     = $issuedAt->modify('+7 days')->getTimestamp();
+        $serverName = "projectnumber2";
+
+        $data = [
+            'iat'       => $issuedAt->getTimestamp(),         // Issued at:  : heure à laquelle le jeton a été généré
+            'iss'       => $serverName,                       // Émetteur
+            'nbf'       => $issuedAt->getTimestamp(),         // Pas avant..
+            'exp'       => $expire,                           // Expiration
+            'userName'  => $username,                     // Nom d'utilisateur
+        ];
+
+        return JWT::encode($data, $secretKey,'HS512');
+
+    }
 }

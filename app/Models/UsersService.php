@@ -1,11 +1,13 @@
 <?php
 namespace App\Models;
 use Utils\PDOUtils;
+use App\Entities\User;
 
-class Users {
+class UsersService {
     private $utils;
 
-    public function __construct(){
+    public function __construct()
+    {
         $this->utils = new PDOUtils();
     }
 
@@ -15,7 +17,20 @@ class Users {
      */
     public function getAllUsers(){
         $result_set = $this->utils->pdo('SELECT * FROM players', [], true);
-        return $result_set;
+        $result = array();
+        foreach ($result_set as $data) {
+            $user = new User();
+
+            $user->setId($data['id']);
+            $user->setUsername($data['username']);
+            $user->setFirstName($data['first_name']);
+            $user->setLastName($data['last_name']);
+            $user->setAge($data['age']);
+            $user->setPassword($data['password']);
+            
+            array_push($result, $user);
+        }
+        return $result;
     }
 
     /**

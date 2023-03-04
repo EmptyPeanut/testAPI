@@ -1,7 +1,7 @@
 <?php
 // require_once './app/PremiereClass.php';
 declare(strict_types=1);
-// require './app/Dispatcher/UsersDispatcher.php';
+// require_once './app/Dispatcher/UsersDispatcher.php';
 
 require 'vendor/autoload.php';
 
@@ -18,7 +18,7 @@ $explodedURI = explode('/', $URI);
 
 switch ($explodedURI[1]) {
     case 'user':
-        $users = new UsersDispatcher($URI);
+        new UsersDispatcher($explodedURI);
         break;
     
     default:
