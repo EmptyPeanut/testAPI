@@ -28,15 +28,12 @@ class UsersController {
         case 'findall':
             $this->getAllUsers();
             break;
-
         case 'add':
             $this->addUser();
             break;
-
         case 'findOne':
             $this->findOne();
             break;
-
         case 'update':
             $this->modifyUser();
             break;
@@ -121,7 +118,7 @@ class UsersController {
                             Helper::returnJson([
                                 "code" => "200"
                             ]);
-                            $this->model->addUser($data['firstName'], $data['lastName'], $data['username'], $hashedPwd, $data['age']);
+                            $this->model->addUser($data['firstName'], $data['lastName'], $data['username'], $hashedPwd, $data['age'] ?? null);
 
                         } catch (\Throwable $th) {
 
@@ -182,7 +179,7 @@ class UsersController {
             }
         } else {
             header('HTTP/1.1 405', true, 405);
-        } 
+        }
     }
 
     /**
