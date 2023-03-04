@@ -31,9 +31,9 @@ class UsersController {
 
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             if (Helper::checkAuthorization()) {
-                $users     = $this->model->getAllUsers();
-                $result         = [];
+                $users          = $this->model->getAllUsers();
                 $result['data'] = $users;
+                Helper::log('Une requête pour récuperer tous les users a eu lieu');
 
                 // foreach ($users as $user) {
 
@@ -51,7 +51,7 @@ class UsersController {
                     // );
                 // }
 
-                if (!is_null($result)) {
+                if (!is_null($users)) {
                     $result['code'] = 200;
                     Helper::returnJson($result);
                 }

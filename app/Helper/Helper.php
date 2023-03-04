@@ -14,18 +14,23 @@ class Helper{
      * @param string $type 'error' -> log dans le fichier d'erreur
      */
     public static function log(string $msg, string $type = null): void{
+
         $now = new DateTime('now');
-        $data = [$now, $msg];
+        $data = "{$now->format('Y-m-d H:i:s')}  :  {$msg}\n";
+
         if ($type === 'error') {
-            $stream = fopen('../log/error_logs.txt', 'a+');
-            fputcsv($stream, $data);
-            fclose($stream);
-
+            if (file_exists(__DIR__ . '/log/error_logs.txt')) {
+                $stream = fopen(__DIR__ . '/log/error_logs.txt', 'a+');
+                fwrite($stream, $data);
+                fclose($stream);
+            }
+            
         }else{
-            $stream = fopen('../log/logs.txt', 'a+');
-            fputcsv($stream, $data);
-            fclose($stream);
-
+            if (file_exists(__DIR__ . '/log/logs.txt')) {
+                $stream = fopen(__DIR__ . '/log/logs.txt', 'a+');
+                fwrite($stream, $data);
+                fclose($stream);
+            }
         }
     }
 
