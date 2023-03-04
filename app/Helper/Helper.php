@@ -1,11 +1,33 @@
 <?php
 namespace App;
+
+use DateTime;
 use \DateTimeImmutable;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
 class Helper{
 
+
+    /**
+     * Log either in the error_logs.csv or logs.csv file
+     * @param string $type 'error' -> log dans le fichier d'erreur
+     */
+    public static function log(string $msg, string $type = null): void{
+        $now = new DateTime('now');
+        $data = [$now, $msg];
+        if ($type === 'error') {
+            $stream = fopen('../log/error_logs.txt', 'a+');
+            fputcsv($stream, $data);
+            fclose($stream);
+
+        }else{
+            $stream = fopen('../log/logs.txt', 'a+');
+            fputcsv($stream, $data);
+            fclose($stream);
+
+        }
+    }
 
     public static function returnJson(array $data){
         header('content-type:application/json');

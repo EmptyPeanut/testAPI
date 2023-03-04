@@ -8,7 +8,14 @@ class UsersDispatcher{
 
     private $explodedURI;
     private $usersController;
-        
+    
+    public function __construct(string $URI)
+    {
+        $this->explodedURI = explode('/', substr($URI, 6));
+        $this->usersController = new UsersController($URI);
+        $this->dispatch($this->explodedURI);
+    }
+    
     public function dispatch(array $explodedURI){
         return match ($explodedURI[0]) {
             'findAll'   => $this->usersController->getAllUsers(),
@@ -20,10 +27,5 @@ class UsersDispatcher{
         };
     }
 
-    public function __construct(string $URI)
-    {
-        $this->explodedURI = explode('/', substr($URI, 6));
-        $this->usersController = new UsersController($URI);
-        $this->dispatch($this->explodedURI);
-    }
+    
 }

@@ -2,7 +2,7 @@
     "name": "composertest/theo",
     "autoload": {
         "psr-4": {
-            "App\\": ["app/", "app/Controllers", "app/Models", "app/Helper"],
+            "App\\": ["app/", "app/Controllers", "app/Models", "app/Helper", "app/Dispatchers"],
             "Utils\\": "Utils/"
         }
     },
