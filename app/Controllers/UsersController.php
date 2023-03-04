@@ -12,41 +12,12 @@ use Firebase\JWT\JWT;
 class UsersController {
     
     private $model;
-    private $URI;
     private $explodedURI;
 
-    function __construct(string $URI){
+    function __construct(array $explodedUri){
+        $this->explodedURI = $explodedUri;
         $this->model = new Users();
-        $this->URI = $URI;
-        $this->explodedURI = explode('/', substr($this->URI, 6));
     }
-
-    public function dispatcher(){
-        
-        switch ($this->explodedURI[0]) {
-
-        case 'findall':
-            $this->getAllUsers();
-            break;
-        case 'add':
-            $this->addUser();
-            break;
-        case 'findOne':
-            $this->findOne();
-            break;
-        case 'update':
-            $this->modifyUser();
-            break;
-        case 'connect':
-            $this->connection();
-            break;
-        default:
-            $this->getAllUsers();
-            break;
-        }
-    }
-
-    
 
     //TODO: Ajouter une autorisation Bearer spécifique pour les tâches "Admin", ou le spécifier dans le body du JWT
     //Ajouter la fonction qui check si admin ou pas dans le helper
@@ -167,7 +138,7 @@ class UsersController {
     {
         if ($_SERVER['REQUEST_METHOD'] == 'PATCH') {
             $data = json_decode(file_get_contents('php://input'), true);
-            if (count($this->explodedURI)== 2 && isset($this->explodedURI[1]) && !is_null($this->explodedURI[1]) && !empty($this->explodedURI[1])) {
+            if (count($this->explodedURI) == 2 && isset($this->explodedURI[1]) && !is_null($this->explodedURI[1]) && !empty($this->explodedURI[1])) {
                 $userId = (int)$this->explodedURI[1];
                 if (!empty($userId)) {
                     var_dump('Hello');
@@ -184,7 +155,6 @@ class UsersController {
 
     /**
      * Get data of a specific user by his Id
-     * @Route findOne/{int id}
      * @return JSON Response body
      */
     public function findOne()
