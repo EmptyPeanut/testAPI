@@ -5,7 +5,7 @@ namespace App\Controllers;
 
 use App\Helper;
 use App\Models\UsersService;
-use App\Entities\Users;
+use App\Entities\User;
 use \DateTimeImmutable;
 use Firebase\JWT\JWT;
 
@@ -33,23 +33,7 @@ class UsersController {
             if (Helper::checkAuthorization()) {
                 $users          = $this->model->getAllUsers();
                 $result['data'] = $users;
-                Helper::log('Une requête pour récuperer tous les users a eu lieu');
-
-                // foreach ($users as $user) {
-
-                    
-
-                    // array_push(
-                    //     $result['data'],
-                    //     [
-                    //         "id"            => $set["id"],
-                    //         "username"      => $set["username"],
-                    //         "firstName"     => $set["first_name"],
-                    //         "lastName"      => $set["last_name"],
-                    //         "age"           => $set["age"]
-                    //     ]
-                    // );
-                // }
+                // Helper::log('Une requête pour récuperer tous les users a eu lieu');
 
                 if (!is_null($users)) {
                     $result['code'] = 200;
@@ -67,71 +51,60 @@ class UsersController {
      * Create a user from the data passed in the body request
      * @return Bearer
      */
-    public function addUser(): void
+    public function addUser()
     {
-        $data = json_decode(file_get_contents('php://input'), true);
 
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && strpos($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded') !== false) {
 
-            if (!is_null($data) && !empty($data)) {
 
-                if (isset($data['username']) && !empty($data['username'])
-                    && isset($data['firstName']) && !empty($data['firstName'])
-                    && isset($data['lastName']) && !empty($data['lastName'])
-                    && isset($data['password']) && !empty($data['password'])
-                    ) {
+            if (!empty($_POST['username'])
+                && !empty($_POST['firstName'])
+                && !empty($_POST['lastName'])
+                && !empty($_POST['password'])) 
+            {
+                    
+                $hashedPwd = password_hash($_POST["password"], PASSWORD_DEFAULT);
 
-                    if (   gettype($data['username'])   == "string"
-                        && gettype($data['password'])   == "string"
-                        && gettype($data['firstName'])  == "string"
-                        && gettype($data['lastName'])   == "string"
-                        ) {
-                        
-                        $hashedPwd = password_hash($data["password"], PASSWORD_DEFAULT);
-                        try {
-
-                            Helper::returnJson([
-                                "code" => "200"
-                            ]);
-                            $this->model->addUser($data['firstName'], $data['lastName'], $data['username'], $hashedPwd, $data['age'] ?? null);
-
-                        } catch (\Throwable $th) {
-
-                            echo(json_encode([
-                                "message" => "Something wrong happenned while adding your account to the database"
-                            ]));
-
-                        }
-                        
-                    } else {
-                        
-                        Helper::returnJson([
-                            "code"      => 400,
-                            "message"   => "Input of wrong type"
-                        ]);
-
-                        header('HTTP/1.1 400 Wrong type', true, 400);
-
+                try {
+                    $user = new User();
+                    
+                    $user->setUsername($_POST['username']);
+                    $user->setFirstName($_POST['firstName']);
+                    $user->setLastName($_POST['lastName']);
+                    !empty($_POST['age']) ? $user->setAge($_POST['age']) : $user->setAge(null);
+                    $user->setPassword($hashedPwd);
+                    
+                    $userInfos = $this->model->addUser($user);
+                    // die(var_dump($userInfos));
+                    if ($userInfos !== false) {
+                        $token = Helper::createAuthorization($userInfos['username'], $userInfos['id']);
+                        header('Authorization: Bearer ' . $token);
+                        Helper::log("Un user a été ajouté: {$user->getUsername()}");
                     }
-                } else {
-
+                    
                     Helper::returnJson([
-                        "code"      => 400,
-                        "message"   => "There are missing fields"
+                        "code" => 200
                     ]);
+                } catch (\Throwable $th) {
 
-                    header('HTTP/1.1 400 Username and password are not set', true, 400);
+                    echo(json_encode([
+                        "code" => 500,
+                        "message" => "Something wrong happenned while adding your account to the database: {$th}"
+                    ]));
 
                 }
+                    
             } else {
 
-                Helper::returnJson([   
+                Helper::returnJson([
                     "code"      => 400,
-                    "message"   => "Something went wrong trying to get the request body"
+                    "message"   => "There are missing fields"
                 ]);
 
-                header('HTTP/1.1 400', true, 400);
+                header('HTTP/1.1 400 Bad request', true, 400);
+
             }
+            
         }else {
             header('HTTP/1.1 405', true, 405);
         }  
@@ -140,12 +113,21 @@ class UsersController {
     //TODO: Fonction incmplète ici et dans le model, ne sait pas encore comment la modification se fera
     public function modifyUser()
     {
-        if ($_SERVER['REQUEST_METHOD'] == 'PATCH') {
-            $data = json_decode(file_get_contents('php://input'), true);
-            if (count($this->explodedURI) == 2 && isset($this->explodedURI[1]) && !is_null($this->explodedURI[1]) && !empty($this->explodedURI[1])) {
-                $userId = (int)$this->explodedURI[1];
+        if ($_SERVER['REQUEST_METHOD'] == 'PATCH' && strpos($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded') !== false) {
+
+            if (count($this->explodedURI) == 3 && !empty($this->explodedURI[3])) {
+                $userId = (int)$this->explodedURI[3];
                 if (!empty($userId)) {
-                    var_dump('Hello');
+                    $user = new User();
+                    foreach ($_POST as $k => $val) {
+                        match ($k) {
+                            'username'      => $user->setUsername($val),
+                            'firstName'     => $user->setFirstName($val),
+                            'lastName'      => $user->setLastName($val),
+                            'password'      => $user->setPassword(password_hash($val, PASSWORD_DEFAULT)),
+                            'age'           => $user->setAge($val)
+                        };
+                    }
                 }else {
                     header('HTTP/1.1 405 Id of wrong type', true, 405);
                 }
@@ -224,23 +206,22 @@ class UsersController {
      */
     public function connection(){
 
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && strpos($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded') !== false) {
 
-            $data = json_decode(file_get_contents('php://input'), true);
 
-            if (count($data) == 2 
-                && isset($data["username"]) && !is_null($data["username"]) && !empty($data["username"])
-                && isset($data["password"]) && !is_null($data["password"]) && !empty($data["password"])
+            if (count($_POST) == 2 
+                && !empty($_POST["username"])
+                && !empty($_POST["password"])
             ) {
 
-                $userInfos = $this->model->connectUser($data["username"], $data["password"], true);
+                $userInfos = $this->model->connectUser($_POST["username"], $_POST["password"], true);
+                if ($userInfos !== false) {
 
-                if ($userInfos) {
-
-                    $token = Helper::createAuthorization($userInfos['username']);
+                    $token = Helper::createAuthorization($userInfos['username'], $userInfos['id']);
 
                     //C'est ici que la connexion est réussie
                     if ($userInfos !== true && !empty($token)) {
+                        
                         header('Authorization: Bearer ' . $token);
                         return Helper::returnJson(["code"  => 200]);
                         
@@ -249,7 +230,8 @@ class UsersController {
                 }else {
 
                     Helper::returnJson([
-                        "message" => "This username does not exist or Wrong combination of username/password"
+                        "code"      => 400,
+                        "message"   => "This username does not exist or Wrong combination of username/password"
                     ]);
                     header('HTTP/1.1 400', true, 400);
 
@@ -266,7 +248,8 @@ class UsersController {
         }else {
 
             Helper::returnJson([
-                "message" => "Wrong method, please use 'POST' method instead"
+                "code"      => 400,
+                "message"   => "Wrong method, please use 'POST' method instead and content type of 'application/x-www-form-urlencoded'"
             ]);
             header('HTTP/1.1 405', true, 405);
 

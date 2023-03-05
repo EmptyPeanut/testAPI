@@ -40,7 +40,16 @@ class UsersService {
      */
     public function getUser(int $id){
         $result_set = $this->utils->pdo('SELECT * FROM players WHERE id = ?', [$id], true);
-        return $result_set;
+
+        $user = new User();
+        $user->setId($result_set['id']);
+        $user->setUsername($result_set['username']);
+        $user->setFirstName($result_set['first_name']);
+        $user->setLastName($result_set['last_name']);
+        $user->setAge($result_set['age']);
+        $user->setPassword($result_set['password']);
+
+        return $user;
     }
 
     /**
@@ -50,14 +59,16 @@ class UsersService {
      * @param string    $username
      * @param string    $pwd
      * @param bool|null $age
-     * @return void
+     * @return int $id
      */
-    public function addUser(string $firstname, string $lastname, string $username, string $pwd, string $age = null){
+    public function addUser(User $user){
         $this->utils->pdo(
             'INSERT INTO players (first_name, last_name, username, password, age) VALUES (?, ?, ?, ?, ?)',
-            [$firstname, $lastname, $username, $pwd, $age],
+            [$user->getFirstName(), $user->getLastName(), $user->getUsername(), $user->getPassword(), $user->getAge()],
             false
         );
+        return $this->userExists($user->getUsername(), true)[0];
+
     }
 
     /**
@@ -67,6 +78,7 @@ class UsersService {
      */
     public function modifyUser(int $id){
         //TODO: à refaire, dépend de comment est fait l'envoi dans le front
+        $myQuery = "";
         $this->utils->pdo(
             "UPDATE players SET nom_colonne_1 = 'nouvelle valeur' WHERE id = ?",
             [$id],
@@ -77,12 +89,17 @@ class UsersService {
     /**
      * Checks if a user exists by the given username
      * @param string $username
-     * @return bool
+     * @param bool $return if true, returns user data [id, username, password]
+     * @return bool|array
      */
-    public function userExists(string $username){
-        $result_set = $this->utils->pdo('SELECT * FROM players WHERE username = ?', [$username], true);
+    public function userExists(string $username, bool $return = false){
+        $result_set = $this->utils->pdo('SELECT id, username, password FROM players WHERE username = ?', [$username], true);
         if (!is_null($result_set) && !empty($result_set)) {
-            return true;
+            if ($return === false) {
+                return true;
+            }else {
+                return $result_set;
+            }
         }else {
             return false;
         }
@@ -95,17 +112,15 @@ class UsersService {
      * @param string    $username
      * @param string    $pwd
      * @param bool|null $data
+     * @return bool|array|null
      */
-    public function connectUser(string $username, string $pwd, bool $data = false){
-        if ($this->userExists($username)) {
-            $result_set = $this->utils->pdo(
-                'SELECT * FROM players WHERE username = ?',
-                [$username],
-                true
-            )[0];
-            if (isset($result_set["password"]) && password_verify($pwd, $result_set["password"])) {
+    public function connectUser(string $username, string $pwd, bool $data = false): bool|array|null
+    {
+        $user = $this->userExists($username, true);
+        if ($user !== false) {
+            if (!empty($user[0]["password"]) && password_verify($pwd, $user[0]["password"])) {
                 if ($data === true) {
-                    return $result_set;
+                    return $user[0];
                 }else {
                     return true;
                 } 
