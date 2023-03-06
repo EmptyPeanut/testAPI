@@ -38,18 +38,23 @@ class UsersService {
      * @param int $id
      * @return array
      */
-    public function getUser(int $id){
+    public function getUser(int $id): User|bool{
         $result_set = $this->utils->pdo('SELECT * FROM players WHERE id = ?', [$id], true);
 
-        $user = new User();
-        $user->setId($result_set['id']);
-        $user->setUsername($result_set['username']);
-        $user->setFirstName($result_set['first_name']);
-        $user->setLastName($result_set['last_name']);
-        $user->setAge($result_set['age']);
-        $user->setPassword($result_set['password']);
-
-        return $user;
+        if (!empty($result_set)) {
+            $user = new User();
+            $user->setId($result_set[0]['id']);
+            $user->setUsername($result_set[0]['username']);
+            $user->setFirstName($result_set[0]['first_name']);
+            $user->setLastName($result_set[0]['last_name']);
+            $user->setAge($result_set[0]['age']);
+            $user->setPassword($result_set[0]['password']);
+            
+            return $user;
+        }else{
+            return false;
+        }
+        
     }
 
     /**
@@ -73,17 +78,34 @@ class UsersService {
 
     /**
      * Modify a user by the given Id
-     * @param int $id
+     * @param int   $id
+     * @param array $data user infos to change
      * @return void
      */
-    public function modifyUser(int $id){
+    public function modifyUser(int $id, array $data): bool{
         //TODO: à refaire, dépend de comment est fait l'envoi dans le front
-        $myQuery = "";
-        $this->utils->pdo(
-            "UPDATE players SET nom_colonne_1 = 'nouvelle valeur' WHERE id = ?",
-            [$id],
-            false
-        );
+        $myQuery = "UPDATE players SET";
+        $condition = "WHERE id = ?";
+        $params = array();
+
+        foreach ($data as $i => $val) {
+            $myQuery .= "{$i} = ?";
+            array_push($params, $val);
+        }
+        array_push($params, $id);
+
+        try {
+            $this->utils->pdo(
+                $myQuery . $condition,
+                $params,
+                false
+            );
+            return true;
+
+        } catch (\Throwable $th) {
+            return false;
+        }
+        
     }
 
     /**

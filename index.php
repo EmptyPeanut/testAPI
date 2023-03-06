@@ -1,14 +1,27 @@
 <?php
 // require_once './app/PremiereClass.php';
 declare(strict_types=1);
-// require_once './app/Dispatcher/UsersDispatcher.php';
-
+// phpinfo();
 require 'vendor/autoload.php';
-
-use App\Controllers\UsersController;
+use App\Helper;
 use App\Dispatchers\UsersDispatcher;
 
+
 date_default_timezone_set('Europe/Paris');
+set_error_handler(array("App\Helper", "errorLog"));
+set_exception_handler(array("App\Helper", "exceptionLog"));
+
+// trigger_error("Ceci est une erreur non fatale", E_USER_WARNING);
+// function divide($a, $b) {
+//     if ($b === 0) {
+//         throw new Exception("Division by zero");
+//     }
+
+//     return $a / $b;
+// }
+
+
+//     echo divide(10, 0);
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();

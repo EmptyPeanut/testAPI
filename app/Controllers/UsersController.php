@@ -28,7 +28,7 @@ class UsersController {
      */
     public function getAllUsers()
     {
-
+        
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             if (Helper::checkAuthorization()) {
                 $users          = $this->model->getAllUsers();
@@ -36,6 +36,7 @@ class UsersController {
                 // Helper::log('Une requête pour récuperer tous les users a eu lieu');
 
                 if (!is_null($users)) {
+                    Helper::log("Quelqu'un a fait une requête afin de récupérer tous les users");
                     $result['code'] = 200;
                     Helper::returnJson($result);
                 }
@@ -43,7 +44,7 @@ class UsersController {
             
 
         }else {
-            header('HTTP/1.1 405', true, 405);
+            http_response_code(405);
         }
     }
     
@@ -110,7 +111,7 @@ class UsersController {
         }  
     }
 
-    //TODO: Fonction incmplète ici et dans le model, ne sait pas encore comment la modification se fera
+    //TODO: Fonction incomplète ici et dans le model, ne sait pas encore comment la modification se fera
     public function modifyUser()
     {
         if ($_SERVER['REQUEST_METHOD'] == 'PATCH' && strpos($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded') !== false) {
@@ -118,16 +119,28 @@ class UsersController {
             if (count($this->explodedURI) == 3 && !empty($this->explodedURI[3])) {
                 $userId = (int)$this->explodedURI[3];
                 if (!empty($userId)) {
-                    $user = new User();
-                    foreach ($_POST as $k => $val) {
-                        match ($k) {
-                            'username'      => $user->setUsername($val),
-                            'firstName'     => $user->setFirstName($val),
-                            'lastName'      => $user->setLastName($val),
-                            'password'      => $user->setPassword(password_hash($val, PASSWORD_DEFAULT)),
-                            'age'           => $user->setAge($val)
-                        };
+                    $tokenId = Helper::checkAuthorization(true);
+                    if ($tokenId === $userId) {
+
+                        $changedData = array();
+
+                        foreach ($_POST as $k => $val) {
+                            match ($k) {
+                                'username'      => $changedData['username']     = (string)$val,
+                                'firstName'     => $changedData['first_name']   = (string)$val,
+                                'lastName'      => $changedData['last_name']    = (string)$val,
+                                'password'      => $changedData['password']     = (password_hash((string)$val, PASSWORD_DEFAULT)),
+                                'age'           => $changedData['age']          = (int)$val
+                            };
+                        }
+                    }else {
+                        Helper::returnJson([
+                            "code"      => 403,
+                            "message"   => "You cannot change an other account than yours"
+                        ]);
+                        header('HTTP/1.1 403 IDs are not matching', true, 403);
                     }
+                    
                 }else {
                     header('HTTP/1.1 405 Id of wrong type', true, 405);
                 }
@@ -149,30 +162,25 @@ class UsersController {
 
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
-            if (count($this->explodedURI) == 2 
+            if (count($this->explodedURI) == 4 
                 && isset($this->explodedURI[1])
                 && !is_null($this->explodedURI[1])
                 && !empty($this->explodedURI[1])
                 ) {
 
-                $userId = (int)$this->explodedURI[1];
-
+                $userId = (int)$this->explodedURI[3];
                 if (!empty($userId)) {
-                    $result_set = $this->model->getUser($userId)[0];
-                    if (!is_null($result_set) && !empty($result_set)) {
+                    $result_set = $this->model->getUser($userId);
+                    if ($result_set) {
                         $result = [
-                            "data" => array(
-                                "id"            => $result_set["id"],
-                                "username"      => $result_set["username"],
-                                "firstName"     => $result_set["first_name"],
-                                "lastName"       => $result_set["last_name"],
-                                "age"           => $result_set["age"]
-                            ),
-                            "code" => 200
+                            "code" => 200,
+                            "data" => $result_set
                         ];
                     }else {
+                        http_response_code(500);
                         $result = [
-                            "message" => "No user found"
+                            "code"      => 500,
+                            "message"   => "No user found"
                         ];
                     }
                     

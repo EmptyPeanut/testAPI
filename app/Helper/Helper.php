@@ -13,25 +13,52 @@ class Helper{
      * Log either in the error_logs.csv or logs.csv file
      * @param string $type 'error' -> log dans le fichier d'erreur
      */
-    public static function log(string $msg, string $type = null): void{
+    public static function log(string $msg): void{
 
         $now = new DateTime('now');
         $data = "{$now->format('Y-m-d H:i:s')} : {$msg}\n";
 
-        if ($type === 'error') {
-            if (file_exists(__DIR__ . '/log/error_logs.txt')) {
-                $stream = fopen(__DIR__ . '/log/error_logs.txt', 'a+');
-                fwrite($stream, $data);
-                fclose($stream);
-            }
-            
-        }else{
-            if (file_exists(__DIR__ . '/log/logs.txt')) {
-                $stream = fopen(__DIR__ . '/log/logs.txt', 'a+');
-                fwrite($stream, $data);
-                fclose($stream);
-            }
+        if (file_exists(__DIR__ . '/log/log.log')) {
+            file_put_contents(__DIR__ . '/log/log.log', $data, FILE_APPEND);
         }
+        
+    }
+
+    /**
+     * Log either in the error_logs.csv or logs.csv file
+     * @param string $type 'error' -> log dans le fichier d'erreur
+     */
+    public static function errorLog($errno, $errstr, $errfile, $errline){
+        $now = new DateTime('now');
+        $error_message = "[{$now->format('Y-m-d H:i:s')}] Erreur [{$errno}] : \"{$errstr}\" dans le fichier {$errfile} à la ligne {$errline}\n";
+
+        if (file_exists(__DIR__ . '/log/error_log.log')) {
+            file_put_contents(__DIR__ . '/log/error_log.log', $error_message, FILE_APPEND);
+        }
+        // http_response_code(500);
+        // die(static::returnJson([
+        //     "code" => 500,
+        //     "message" => $error_message
+        // ]));
+
+    }
+    /**
+     * Log either in the error_logs.csv or logs.csv file
+     * @param string $type 'error' -> log dans le fichier d'erreur
+     */
+    public static function exceptionLog(\Throwable $exception){
+        $now = new DateTime('now');
+        $error_message = "[{$now->format('Y-m-d H:i:s')}] Erreur {$exception->getCode()}: \"{$exception->getMessage()}\" dans le fichier {$exception->getFile()} à la ligne {$exception->getLine()}\n";
+
+        if (file_exists(__DIR__ . '/log/error_log.log')) {
+            file_put_contents(__DIR__ . '/log/error_log.log', $error_message, FILE_APPEND);
+        }
+        http_response_code(500);
+        die(static::returnJson([
+            "code" => 500,
+            "message" => $error_message
+        ]));
+
     }
 
     /**
@@ -48,19 +75,28 @@ class Helper{
      * WIP -> Ajouter un check pour qu'un user puisse modifier seulement le compte avec lequel il est connecté
      * => Ajouter un paramètre par exemple de type (string)username qui est null de base et lorsque renseigné, check avec le
      * Username du token pour voir si c'est le même
-     * 
+     * @param bool $return returns user's Id if true
      */
-    public static function checkAuthorization(){
+    public static function checkAuthorization(bool $return = false): bool|array|int
+    {
         
         if (isset($_SERVER['HTTP_AUTHORIZATION']) && !empty($_SERVER['HTTP_AUTHORIZATION'])) {
 
             $auth = explode(' ', $_SERVER['HTTP_AUTHORIZATION']);
             try {
                 $jwt = JWT::decode($auth[1], new Key($_ENV['KEY'], 'HS512'));
-                return true;
+                if ($return) {
+                    return !empty($jwt->id) ? $jwt->id : static::returnJson([
+                        "code"      => 403,
+                        "message"   => "No id found in token"
+                    ]);
+                }else {
+                    return true;
+                }
             } catch (\Throwable $th) {
                 return static::returnJson([
-                    "message" => "Wrong token"
+                    "code"      => 403,
+                    "message"   => "Wrong token"
                 ]);
                 die();
             }
