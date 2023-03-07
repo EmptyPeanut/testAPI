@@ -1,5 +1,5 @@
 /vendor/
-/.htaccess
 /.DS_Store
 /.env
-/app/Helper/log
+/public/app/Helper/log
+/log

@@ -2,7 +2,7 @@
 // require_once './app/PremiereClass.php';
 declare(strict_types=1);
 // phpinfo();
-require 'vendor/autoload.php';
+require '../vendor/autoload.php';
 use App\Helper;
 use App\Dispatchers\UsersDispatcher;
 
@@ -22,8 +22,8 @@ set_exception_handler(array("App\Helper", "exceptionLog"));
 
 
 //     echo divide(10, 0);
-
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+// die(var_dump(__DIR__));
+$dotenv = Dotenv\Dotenv::createImmutable('../');
 $dotenv->load();
 
 $URI = $_SERVER['REQUEST_URI'];
