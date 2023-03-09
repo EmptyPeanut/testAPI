@@ -31,20 +31,25 @@ class UsersController {
         
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             if (Helper::checkAuthorization()) {
-                $users          = $this->model->getAllUsers();
-                $result['data'] = $users;
+                $users = $this->model->getAllUsers();
                 // Helper::log('Une requête pour récuperer tous les users a eu lieu');
 
                 if (!is_null($users)) {
                     Helper::log("Quelqu'un a fait une requête afin de récupérer tous les users");
-                    $result['code'] = 200;
-                    Helper::returnJson($result);
+                    Helper::returnJson([
+                        "code" => 200,
+                        "data" => $users
+                    ]);
                 }
             }
             
 
         }else {
             http_response_code(405);
+            return Helper::returnJson([
+                "code" => 500,
+                "message" => "Wrong method"
+            ]);
         }
     }
     
@@ -114,16 +119,16 @@ class UsersController {
     //TODO: Fonction incomplète ici et dans le model, ne sait pas encore comment la modification se fera
     public function modifyUser()
     {
-        if ($_SERVER['REQUEST_METHOD'] == 'PATCH' && strpos($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded') !== false) {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && strpos($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded') !== false) {
+            
+            if (count($this->explodedURI) == 4) {
 
-            if (count($this->explodedURI) == 3 && !empty($this->explodedURI[3])) {
                 $userId = (int)$this->explodedURI[3];
                 if (!empty($userId)) {
                     $tokenId = Helper::checkAuthorization(true);
                     if ($tokenId === $userId) {
-
                         $changedData = array();
-
+                        
                         foreach ($_POST as $k => $val) {
                             match ($k) {
                                 'username'      => $changedData['username']     = (string)$val,
@@ -133,6 +138,10 @@ class UsersController {
                                 'age'           => $changedData['age']          = (int)$val
                             };
                         }
+                        //die(var_dump($changedData));
+                        $this->model->modifyUser($tokenId, $changedData);
+                        Helper::returnJson(["code" => 200]);
+
                     }else {
                         Helper::returnJson([
                             "code"      => 403,
@@ -145,7 +154,7 @@ class UsersController {
                     header('HTTP/1.1 405 Id of wrong type', true, 405);
                 }
             }else {
-                header('HTTP/1.1 405 No id found', true, 405);
+                header('HTTP/1.1 405 No id found or wrong path', true, 405);
             }
         } else {
             header('HTTP/1.1 405', true, 405);
@@ -212,7 +221,8 @@ class UsersController {
      * Check the username/password combination, if they match, returns the bearer authorization
      * @return Bearer
      */
-    public function connection(){
+    public function connection()
+    {
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST' && strpos($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded') !== false) {
 

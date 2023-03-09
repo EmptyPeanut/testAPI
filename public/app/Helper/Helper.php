@@ -16,10 +16,10 @@ class Helper{
     public static function log(string $msg): void{
 
         $now = new DateTime('now');
-        $data = "{$now->format('Y-m-d H:i:s')} : {$msg}\n";
+        $data = "[{$now->format('Y-m-d H:i:s')}] : {$msg}\n";
 
-        if (file_exists(__DIR__ . '/log/log.log')) {
-            file_put_contents(__DIR__ . '/log/log.log', $data, FILE_APPEND);
+        if (file_exists('../log/error.log')) {
+            file_put_contents('../log/error.log', $data, FILE_APPEND);
         }
         
     }
@@ -32,8 +32,8 @@ class Helper{
         $now = new DateTime('now');
         $error_message = "[{$now->format('Y-m-d H:i:s')}] Erreur [{$errno}] : \"{$errstr}\" dans le fichier {$errfile} à la ligne {$errline}\n";
 
-        if (file_exists(__DIR__ . '/log/error_log.log')) {
-            file_put_contents(__DIR__ . '/log/error_log.log', $error_message, FILE_APPEND);
+        if (file_exists('../log/error.log')) {
+            file_put_contents('../log/error.log', $error_message, FILE_APPEND);
         }
         // http_response_code(500);
         // die(static::returnJson([
@@ -50,8 +50,8 @@ class Helper{
         $now = new DateTime('now');
         $error_message = "[{$now->format('Y-m-d H:i:s')}] Erreur {$exception->getCode()}: \"{$exception->getMessage()}\" dans le fichier {$exception->getFile()} à la ligne {$exception->getLine()}\n";
 
-        if (file_exists(__DIR__ . '/log/error_log.log')) {
-            file_put_contents(__DIR__ . '/log/error_log.log', $error_message, FILE_APPEND);
+        if (file_exists('../log/error.log')) {
+            file_put_contents('../log/error.log', $error_message, FILE_APPEND);
         }
         http_response_code(500);
         die(static::returnJson([
@@ -79,7 +79,6 @@ class Helper{
      */
     public static function checkAuthorization(bool $return = false): bool|array|int
     {
-        
         if (isset($_SERVER['HTTP_AUTHORIZATION']) && !empty($_SERVER['HTTP_AUTHORIZATION'])) {
 
             $auth = explode(' ', $_SERVER['HTTP_AUTHORIZATION']);
