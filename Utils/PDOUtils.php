@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace Utils;
 use \PDO;
+use App\Helper;
 
 
 class PDOUtils{
@@ -70,7 +71,7 @@ class PDOUtils{
             }
             } catch (\PDOException $e) {
 
-                echo "Erreur général !: " . $e->getMessage() . " " . $e->getLine();
+                Helper::exceptionLog($e);
                 die();
             }
         }

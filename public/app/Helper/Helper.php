@@ -16,7 +16,7 @@ class Helper{
     public static function log(string $msg): void{
 
         $now = new DateTime('now');
-        $data = "{$now->format('Y-m-d H:i:s')} : {$msg}\n";
+        $data = "[{$now->format('Y-m-d H:i:s')}] : {$msg}\n";
 
         if (file_exists('../log/error.log')) {
             file_put_contents('../log/error.log', $data, FILE_APPEND);

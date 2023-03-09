@@ -84,19 +84,27 @@ class UsersService {
      */
     public function modifyUser(int $id, array $data): bool{
         //TODO: à refaire, dépend de comment est fait l'envoi dans le front
+        // die(var_dump($data));
         $myQuery = "UPDATE players SET";
-        $condition = "WHERE id = ?";
+        $condition = " WHERE id = ?";
         $params = array();
-
+        $arrayPosition = 0;
         foreach ($data as $i => $val) {
-            $myQuery .= "{$i} = ?";
+            if ($arrayPosition === 0) {
+                $myQuery .= " {$i} = ?";
+                $arrayPosition = 1;
+            }else {
+                $myQuery .= ", {$i} = ?";
+            }
             array_push($params, $val);
+            
         }
+        $fullQuery = $myQuery . $condition;
         array_push($params, $id);
-
+        // die($fullQuery);
         try {
             $this->utils->pdo(
-                $myQuery . $condition,
+                $fullQuery,
                 $params,
                 false
             );
